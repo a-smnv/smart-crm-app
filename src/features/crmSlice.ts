@@ -44,8 +44,10 @@ updateTaskStatus: (state, action: PayloadAction<{ taskId: string; status: Task['
         task.status = action.payload.status; // Меняем ей статус
       }
     },
-  },
-});
+setLabelFilter: (state, action: PayloadAction<string|null >)=>{
+    state.selectedLabel=action.payload
+}
+}});
 //  Простейший селектор — просто достает массив задач из стора
 export const selectAllTasks = (state:RootState)=> state.crm.tasks;
 export const selectAllUsers = (state: RootState)=> state.crm.users;
@@ -79,6 +81,6 @@ return {
     
 
 // Экспортируем экшенкриэйторы они создают обЪектф экшенов с типом и пэйлоадом, чтобы вызывать их из компонентов
-export const { addTask, updateTaskStatus} = crmSlice.actions;
+export const { addTask, updateTaskStatus,setLabelFilter } = crmSlice.actions;
 // Экспортируем сам редьюсер, чтобы подключить его к общему шкафу Redux
 export default crmSlice.reducer;
