@@ -1,5 +1,6 @@
 import { useAppSelector, useAppDispatch } from '../src/app/hooks';
-import { selectDenormalizedTasks,selectSelectedLabel, setLabelFilter, selectAllTasks } from '../src/features/crmSlice';
+import { selectDenormalizedTasks,selectSelectedLabel, selectAllTasks } from '../src/features/crmSelectors';
+import {setLabelFilter} from './features/crmSlice'
 
 function App(){
   const dispatch = useAppDispatch()

@@ -1,7 +1,5 @@
-import {createSlice, createSelector, type PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import type { User, Task } from '../types/crm.types';
-import type { RootState } from '../app/store';
-
 
 // 1. Описываем форму (интерфейс) для самого ящика нашего хранилища
 interface CRMState {
@@ -48,37 +46,7 @@ setLabelFilter: (state, action: PayloadAction<string|null >)=>{
     state.selectedLabel=action.payload
 }
 }});
-//  Простейший селектор — просто достает массив задач из стора
-export const selectAllTasks = (state:RootState)=> state.crm.tasks;
-export const selectAllUsers = (state: RootState)=> state.crm.users;
-export const selectSelectedLabel = (state: RootState)=> state.crm.selectedLabel;
-// Кэшируем словарь пользователей. 
-// Цикл reduce сработает только тогда, когда массив users реально изменится.
-export const selectUserMap = createSelector([selectAllUsers],(users)=>{
-    return users.reduce<Record<number, User>>((acc,user)=>{
-        acc[user.id]=user;
-return acc;
-    },{})
-})
-//  Кэшируем сборку и фильтрацию денормализованных задач.
-// Функция внутри сработает ТОЛЬКО если изменится массив задач, словарь юзеров или выбранный тег фильтрации.
-export const selectDenormalizedTasks = createSelector([selectAllTasks, selectUserMap, selectSelectedLabel],(tasks,users,selectedLabel)=>{
-  // Шаг 1: Фильтруем задачи, если выбран конкретный тег
-    const filteredTasks = selectedLabel ? tasks.filter(task =>task.labels.includes(selectedLabel)) : tasks; 
-  
-    // Шаг 2: Трансформируем массив отфильтрованных задач, добавляя имя сотрудника
-  return filteredTasks.map((task)=>{
-     // Ищем сотрудника в словаре по id. 
-    // Если assignedTo равен null, то и в user будет undefined
-    const user = task.assignedTo ? users[task.assignedTo] : undefined;
-return {
-    ...task,
-    assignedName :user ? user.name : 'Исполнитель не назначен'
-}  
-})
-}
-)
-    
+
 
 // Экспортируем экшенкриэйторы они создают обЪектф экшенов с типом и пэйлоадом, чтобы вызывать их из компонентов
 export const { addTask, updateTaskStatus,setLabelFilter } = crmSlice.actions;
