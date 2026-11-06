@@ -1,10 +1,28 @@
 import { useAppSelector, useAppDispatch } from '../src/app/hooks';
-import { selectDenormalizedTasks,selectSelectedLabel, selectAllTasks } from '../src/features/crmSelectors';
+import { selectDenormalizedTasks,selectSelectedLabel, selectAllTasks, selectTaskAnalytics } from '../src/features/crmSelectors';
 import {setLabelFilter} from './features/crmSlice'
+import type { TaskStatus } from './types/crm.types'
+import {
+  Page, Title, Subtitle,
+  AnalyticsCard, AnalyticsHeader, AnalyticsTitle, AnalyticsTotal, AnalyticsTotalValue,
+  WidgetGrid, WidgetCard, WidgetLabel, WidgetValue, WidgetMeta, WidgetTrack, WidgetFill,
+  FilterBar, FilterButton,
+  TaskGrid, TaskCard, TaskTitle, TaskDescription, TaskTags, TaskTag, TaskFooter, TaskAssignee, TaskPoints,
+  EmptyState,
+} from './App.styles'
+
+// Ключи берутся прямо из TaskStatus, поэтому TS не даст забыть ни один статус
+// и не даст написать опечатку в названии статуса.
+const STATUS_META: Record<TaskStatus, { label: string; icon: string; color: string }> = {
+  todo: { label: 'К выполнению', icon: '📋', color: '#94a3b8' },
+  in_progress: { label: 'В работе', icon: '⚡', color: '#3b82f6' },
+  review: { label: 'На ревью', icon: '🔍', color: '#f59e0b' },
+  done: { label: 'Готово', icon: '✅', color: '#10b981' },
+}
 
 function App(){
   const dispatch = useAppDispatch()
-  // Вызываем наш селектор. TypeScript автоматически поймет, 
+  // Вызываем наш селектор. TypeScript автоматически поймет,
   // что в переменной tasks лежит массив измененных задач с полем assignedName!
   const tasks = useAppSelector(selectDenormalizedTasks);
 const activeLabel =useAppSelector(selectSelectedLabel)
@@ -16,86 +34,99 @@ const activeLabel =useAppSelector(selectSelectedLabel)
         new Set(allRawTasks.flatMap(task => task.labels))
       )
 
+  // Селектор уже возвращает Record<TaskStatus, number> — сумму story points по статусам
+  const analytics = useAppSelector(selectTaskAnalytics)
+
+  const totalPoints = Object.values(analytics).reduce((sum, points) => sum + points, 0)
+
+  // Object.entries() превращает объект аналитики в массив пар [статус, очки],
+  // чтобы из каждого ключа достать русскую подпись и цвет из STATUS_META.
+  const analyticsWidgets = (Object.entries(analytics) as Array<[TaskStatus, number]>).map(([status, points]) => {
+    const meta = STATUS_META[status]
+    const share = totalPoints === 0 ? 0 : Math.round((points / totalPoints) * 100)
+    return { status, points, ...meta, share }
+  })
+
   return(
-    <div style={{padding:'30px', fontFamily: 'sans-serif', backgroundColor:'#f5f7fb', minHeight:"100vh"}}>
-      <h1 style={{color:"#1e293b",marginBottom: '10px'}}>Smart CRM - Панель задач 🚀</h1>
-                <p style={{ color: '#64748b', marginBottom: '20px' }}>Изучаем продвинутые методы массивов и объектов</p>
-       {/* Блок фильтров (Кнопки) */}
-           <div style={{display:'flex', gap:'10px', marginBottom:'25px', flexWrap:'wrap'}}>
-            {/* Кнопка сброса фильтра */}
-            <button onClick={()=> dispatch(setLabelFilter(null))}style={{
-            padding: '8px 16px',
-            borderRadius: '20px',
-            border: 'none',
-            backgroundColor: activeLabel === null ? '#1e293b' : '#e2e8f0',
-            color: activeLabel === null ? '#fff' : '#334155',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            transition: 'all 0.2s'
-          }}>Все задачи</button>
-          {/* Рендерим уникальные кнопки тегов */}
-               {uniqueLabels.map(label => (
-          <button
+    <Page>
+      <Title>Smart CRM - Панель задач 🚀</Title>
+      <Subtitle>Изучаем продвинутые методы массивов и объектов</Subtitle>
+
+      {/* Блок виджетов аналитики по статусам */}
+      <AnalyticsCard>
+        <AnalyticsHeader>
+          <AnalyticsTitle>📊 Аналитика по статусам</AnalyticsTitle>
+          <AnalyticsTotal>
+            Всего story points: <AnalyticsTotalValue>{totalPoints}</AnalyticsTotalValue>
+          </AnalyticsTotal>
+        </AnalyticsHeader>
+
+        <WidgetGrid>
+          {analyticsWidgets.map(widget => (
+            <WidgetCard key={widget.status} $accent={widget.color}>
+              <WidgetLabel>
+                {widget.icon} {widget.label}
+              </WidgetLabel>
+              <WidgetValue $accent={widget.color}>
+                {widget.points}
+                <WidgetMeta>SP · {widget.share}%</WidgetMeta>
+              </WidgetValue>
+              {/* Прогресс-бар доли статуса в общем объёме очков */}
+              <WidgetTrack>
+                <WidgetFill $share={widget.share} $accent={widget.color} />
+              </WidgetTrack>
+            </WidgetCard>
+          ))}
+        </WidgetGrid>
+      </AnalyticsCard>
+
+      {/* Блок фильтров (Кнопки) */}
+      <FilterBar>
+        {/* Кнопка сброса фильтра */}
+        <FilterButton $active={activeLabel === null} $activeColor="#1e293b" onClick={()=> dispatch(setLabelFilter(null))}>
+          Все задачи
+        </FilterButton>
+        {/* Рендерим уникальные кнопки тегов */}
+        {uniqueLabels.map(label => (
+          <FilterButton
             key={label}
+            $active={activeLabel === label}
+            $activeColor="#3b82f6"
             onClick={() => dispatch(setLabelFilter(label))} // Записываем выбранный тег в Redux
-            style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
-              border: 'none',
-              backgroundColor: activeLabel === label ? '#3b82f6' : '#e2e8f0',
-              color: activeLabel === label ? '#fff' : '#334155',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              transition: 'all 0.2s'
-            }}
           >
             #{label}
-          </button>
+          </FilterButton>
         ))}
-        </div>
-       {/* Сетка карточек задач */}
-      <div style={{ display: 'grid', gap: '15px', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-        {tasks.map(task => (
-          <div 
-            key={task.id} 
-            style={{ 
-              backgroundColor: '#fff', 
-              padding: '20px', 
-              borderRadius: '8px', 
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-              borderLeft: task.status === 'in_progress' ? '5px solid #3b82f6' : '5px solid #e2e8f0'
-            }}
-          >
-            <h3 style={{ margin: '0 0 10px 0', color: '#0f172a' }}>{task.title}</h3>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: '0 0 15px 0' }}>{task.description}</p>
-            
-            {/* Рендерим маленькие теги внутри самой карточки */}
-            <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', flexWrap: 'wrap' }}>
-              {task.labels.map(l => (
-                <span key={l} style={{ fontSize: '11px', backgroundColor: '#eff6ff', color: '#1e40af', padding: '2px 6px', borderRadius: '4px' }}>
-                  #{l}
-                </span>
-              ))}
-            </div>
+      </FilterBar>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-              <span style={{ backgroundColor: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', color: '#334155', fontWeight: 'bold' }}>
-                👤 {task.assignedName}
-              </span>
-              <span style={{ color: '#94a3b8' }}>🔥 Points: {task.points}</span>
-            </div>
-          </div>
+      {/* Сетка карточек задач */}
+      <TaskGrid>
+        {tasks.map(task => (
+          <TaskCard key={task.id} $inProgress={task.status === 'in_progress'}>
+            <TaskTitle>{task.title}</TaskTitle>
+            <TaskDescription>{task.description}</TaskDescription>
+
+            {/* Рендерим маленькие теги внутри самой карточки */}
+            <TaskTags>
+              {task.labels.map(l => (
+                <TaskTag key={l}>#{l}</TaskTag>
+              ))}
+            </TaskTags>
+
+            <TaskFooter>
+              <TaskAssignee>👤 {task.assignedName}</TaskAssignee>
+              <TaskPoints>🔥 Points: {task.points}</TaskPoints>
+            </TaskFooter>
+          </TaskCard>
         ))}
-      </div>
+      </TaskGrid>
 
       {/* Если в выбранном фильтре нет задач */}
       {tasks.length === 0 && (
-        <div style={{ textAlign: 'center', color: '#64748b', marginTop: '40px', fontSize: '18px' }}>
-          Задач с таким тегом пока нет 🤷‍♂️
-        </div>
+        <EmptyState>Задач с таким тегом пока нет 🤷‍♂️</EmptyState>
       )}
-    </div>
-  
+    </Page>
+
   );
 }
 
