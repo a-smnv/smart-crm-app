@@ -28,3 +28,11 @@ export interface Task {
   labels: string[];        // Массив текстовых тегов, например ['frontend', 'bug']
   createdAt: string;       // Дата создания в виде строки
 }
+
+export interface ServerTodo {
+  userId: number;
+  id: number;
+  title: string;
+  completed: boolean;
+}
+

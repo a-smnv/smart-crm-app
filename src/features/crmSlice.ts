@@ -32,7 +32,8 @@ const crmSlice = createSlice({
     reducers:{
     // Функция добавления новой задачи. 
     // PayloadAction<Task> означает, что в комплекте с экшеном мы Обязаны передать объект задачи!
-addTask: (state,action:PayloadAction<Task>)=>{ 
+//Функция внутри reducers: { addTask } — это редьюсер, который обрабатывает экшены типа "crm/addTask" и изменяет состояние.
+    addTask: (state,action:PayloadAction<Task>)=>{ 
      state.tasks.push(action.payload)
 },
 updateTaskStatus: (state, action: PayloadAction<{ taskId: string; status: Task['status'] }>) => {
@@ -44,11 +45,20 @@ updateTaskStatus: (state, action: PayloadAction<{ taskId: string; status: Task['
     },
 setLabelFilter: (state, action: PayloadAction<string|null >)=>{
     state.selectedLabel=action.payload
-}
+},
+    // Заменяем массив задач сетевыми данными
+setApiTasks:(state, action: PayloadAction<Task[]>)=>{
+state.tasks = action.payload;
+},
+// Заменяем массив пользователей сетевыми данными
+    setApiUsers: (state, action: PayloadAction<User[]>) => {
+      state.users = action.payload;
+    },
+
 }});
 
 
 // Экспортируем экшенкриэйторы они создают обЪектф экшенов с типом и пэйлоадом, чтобы вызывать их из компонентов
-export const { addTask, updateTaskStatus,setLabelFilter } = crmSlice.actions;
+export const { addTask, updateTaskStatus,setLabelFilter,setApiTasks, setApiUsers } = crmSlice.actions;
 // Экспортируем сам редьюсер, чтобы подключить его к общему шкафу Redux
 export default crmSlice.reducer;
