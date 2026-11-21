@@ -10,7 +10,7 @@ export const selectSelectedLabel = (state: RootState)=> state.crm.selectedLabel;
 // Цикл reduce сработает только тогда, когда массив users реально изменится.
 export const selectUserMap = createSelector([selectAllUsers],(users)=>{
     return users.reduce<Record<number, User>>((acc,user)=>{
-        acc[user.id]=user;
+        acc[user.id]=user;//Вы кладете новое значение в объект acc под этим ключом. Если такого ключа в acc еще не было, JavaScript автоматически создает его
 return acc;
     },{})
 })
