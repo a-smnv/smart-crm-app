@@ -8,7 +8,9 @@ import {
 } from "../src/features/crmSelectors";
 import { setLabelFilter, setApiUsers, setApiTasks } from "./features/crmSlice";
 import type { TaskStatus } from "./types/crm.types";
-import { useGetTasksQuery, useGetUsersQuery } from './services/crmApi'
+import { useGetTasksQuery, useGetUsersQuery } from './services/crmApi';
+import { TaskForm } from './components/TaskForm';
+import {formatTaskDate}from '../src/utils/formatDate'
 import {
   Page,
   Title,
@@ -139,7 +141,7 @@ function App() {
           ))}
         </WidgetGrid>
       </AnalyticsCard>
-
+ <TaskForm />
       {/* Блок фильтров (Кнопки) */}
       <FilterBar>
         {/* Кнопка сброса фильтра */}
@@ -169,7 +171,7 @@ function App() {
           <TaskCard key={task.id} $inProgress={task.status === "in_progress"}>
             <TaskTitle>{task.title}</TaskTitle>
             <TaskDescription>{task.description}</TaskDescription>
-
+<span>{formatTaskDate(task.createdAt)}</span>
             {/* Рендерим маленькие теги внутри самой карточки */}
             <TaskTags>
               {task.labels.map((l) => (
